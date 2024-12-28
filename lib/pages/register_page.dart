@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class RegisterPage extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -6,9 +8,40 @@ class RegisterPage extends StatelessWidget {
 
   RegisterPage({super.key});
 
-  void register(BuildContext context) {
-    // Implement register using ReqRes.in API
-    Navigator.pop(context);
+  void register(BuildContext context) async {
+    final email = emailController.text;
+    final password = passwordController.text;
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://reqres.in/api/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        // Parse response jika registrasi berhasil
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        print("Registration successful. Token: $token");
+
+        // Kembali ke halaman login
+        Navigator.pop(context);
+      } else {
+        // Tampilkan pesan error jika registrasi gagal
+        final errorData = jsonDecode(response.body);
+        showError(context, errorData['error']);
+      }
+    } catch (e) {
+      // Handle error saat tidak ada koneksi atau lainnya
+      showError(context, "An error occurred. Please try again.");
+    }
+  }
+
+  void showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override

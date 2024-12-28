@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'register_page.dart';
 import 'home_page.dart';
 
@@ -8,11 +10,42 @@ class LoginPage extends StatelessWidget {
 
   LoginPage({super.key});
 
-  void login(BuildContext context) {
-    // Implement login using ReqRes.in API
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => HomePage()),
+  void login(BuildContext context) async {
+    final email = emailController.text;
+    final password = passwordController.text;
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://reqres.in/api/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        // Parse token jika login berhasil
+        final data = jsonDecode(response.body);
+        final token = data['token'];
+        print("Login successful. Token: $token");
+
+        // Navigasi ke HomePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      } else {
+        // Tampilkan pesan error jika login gagal
+        final errorData = jsonDecode(response.body);
+        showError(context, errorData['error']);
+      }
+    } catch (e) {
+      // Handle error saat tidak ada koneksi atau lainnya
+      showError(context, "An error occurred. Please try again.");
+    }
+  }
+
+  void showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
